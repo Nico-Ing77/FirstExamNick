@@ -1,0 +1,4 @@
+Sensor: es un dispositivo que detecta un cambio o estimulo fisico o quimico en su entorno
+Horno: es un aparato cerrado que genera y conserva calor en su interior
+Control: conjunto de dispositivos, para gobernar el comportamiento de un sistema
+Muestra: Subconjunto o una parte representativa de un conjunto

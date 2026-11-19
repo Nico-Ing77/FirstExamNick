@@ -1,78 +1,45 @@
-"""Módulo de Estructuras Dinámicas: Lista Enlazada de Sensores.
-Implementación limpia en Python bajo estándar PEP 8 con Type Hints.
-"""
+import copy
+from typing import Callable
 
-class NodoSensor:
-    """Nodo individual para almacenar datos de sensores e interconectarse en RAM."""
-    def __init__(self, lectura: float):
+# --- 1. Definición del Objeto Sensor ---
+class SensorTemperatura:
+    """Representa un sensor de temperatura industrial."""
+    def __init__(self, identificador: str, lectura: float):
+        self.identificador: str = identificador
         self.lectura: float = lectura
-        self.siguiente: "NodoSensor" | None = None
 
+# --- 2. Apuntadores a Funciones (Manejadores de Eventos / Callbacks) ---
+def alarma_luces(sensor: SensorTemperatura) -> None:
+    """Callback 1: Enciende luces de advertencia."""
+    print(f"🚨 [LUCES]: ¡Alerta en {sensor.identificador}! Valor: {sensor.lectura}°C")
 
-class ListaEnlazadaSensores:
-    """Clase gestora que encapsula las operaciones de la lista enlazada."""
-    def __init__(self):
-        self.cabeza: NodoSensor | None = None
+def alarma_sonora(sensor: SensorTemperatura) -> None:
+    """Callback 2: Activa la sirena de emergencia."""
+    print(f"🔊 [SIRENA]: ¡Sonando alarma por {sensor.identificador}!")
 
-    def insertar_inicio(self, lectura: float) -> None:
-        """Inserta una nueva lectura al principio de la lista (O(1))."""
-        nuevo_nodo = NodoSensor(lectura)
-        nuevo_nodo.siguiente = self.cabeza
-        self.cabeza = nuevo_nodo
+# --- 3. Función que recibe Apuntadores a Funciones (Callbacks) ---
+def evaluar_sensor(sensor: SensorTemperatura, umbral: float, manejadores: list[Callable[[SensorTemperatura], None]]) -> None:
+    """Evalúa un sensor y ejecuta la lista de funciones callbacks si excede el umbral."""
+    if sensor.lectura > umbral:
+        print(f"\n⚠️ [UMBRAL EXCEDIDO en {sensor.identificador}]:")
+        for callback in manejadores:
+            callback(sensor)  # Invocación de la función por referencia
 
-    def insertar_final(self, lectura: float) -> None:
-        """Inserta una nueva lectura al final de la lista (O(N))."""
-        nuevo_nodo = NodoSensor(lectura)
-        if self.cabeza is None:
-            self.cabeza = nuevo_nodo
-            return
-        actual = self.cabeza
-        while actual.siguiente is not None:
-            actual = actual.siguiente
-        actual.siguiente = nuevo_nodo
+# --- Execution Block ---
+if __name__ == "__main__":
+    s1 = SensorTemperatura("SENSOR_01", 85.5)
+    s2 = SensorTemperatura("SENSOR_02", 42.0)
 
-    def buscar(self, valor_buscado: float) -> bool:
-        """Busca si existe una lectura específica en la estructura."""
-        actual = self.cabeza
-        while actual is not None:
-            if actual.lectura == valor_buscado:
-                return True
-            actual = actual.siguiente
-        return False
+    # Arreglo de Referencias a Objetos
+    planta_principal = [s1, s2]
 
-    def eliminar(self, valor_a_eliminar: float) -> bool:
-        """Elimina la primera ocurrencia de un valor en la lista."""
-        actual = self.cabeza
-        anterior: NodoSensor | None = None
+    # Arreglo de Apuntadores a Funciones (Callbacks)
+    protocolo_emergencia = [alarma_luces, alarma_sonora]
 
-        # Caso 1: La lista está vacía
-        if actual is None:
-            return False
+    # Demostración de Copia Profunda vs Superficial
+    planta_respaldo = copy.deepcopy(planta_principal)
+    planta_respaldo[0].lectura = 100.0  # No afecta a planta_principal[0]
 
-        # Caso 2: El elemento a eliminar es la cabeza
-        if actual.lectura == valor_a_eliminar:
-            self.cabeza = actual.siguiente
-            return True
-
-        # Caso 3: Buscar en el resto de la lista
-        while actual is not None and actual.lectura != valor_a_eliminar:
-            anterior = actual
-            actual = actual.siguiente
-
-        # Si no se encontró el valor
-        if actual is None:
-            return False
-
-        # Reconectar referencias para "desenganchar" el nodo
-        anterior.siguiente = actual.siguiente
-        return True
-
-    def mostrar(self) -> None:
-        """Muestra por consola la secuencia completa de lecturas."""
-        actual = self.cabeza
-        elementos = []
-        while actual is not None:
-            elementos.append(f"[{actual.lectura}°C]")
-            actual = actual.siguiente
-        print(" -> ".join(elementos) + " -> None")
-
+    # Evaluación usando callbacks
+    for s in planta_principal:
+        evaluar_sensor(s, umbral=80.0, manejadores=protocolo_emergencia)
